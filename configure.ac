@@ -1018,17 +1018,13 @@ AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
 if test -z "$LINKCC"
 then
-    if test "$ac_sys_system" == "VxWorks" ; then
-        LINKCC="$LD"
-    else
-		LINKCC='$(PURIFY) $(MAINCC)'
-		case $ac_sys_system in
-		QNX*)
-		   # qcc must be used because the other compilers do not
-		   # support -N.
-		   LINKCC=qcc;;
-		esac
-    fi
+	LINKCC='$(PURIFY) $(MAINCC)'
+	case $ac_sys_system in
+	QNX*)
+	   # qcc must be used because the other compilers do not
+	   # support -N.
+	   LINKCC=qcc;;
+	esac
 fi
 AC_MSG_RESULT($LINKCC)
 
