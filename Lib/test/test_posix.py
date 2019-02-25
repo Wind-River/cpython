@@ -38,6 +38,12 @@ def _supports_sched():
             return False
     return True
 
+def _supports_shell():
+    if sys.platform == "vxworks":
+       return False
+    else:
+       return True
+
 requires_sched = unittest.skipUnless(_supports_sched(), 'requires POSIX scheduler API')
 
 
@@ -643,11 +649,15 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
     def test_mkfifo(self):
         os_helper.unlink(os_helper.TESTFN)
+        if sys.platform == "vxworks":
+            fifo_path = os.path.join("/fifos/", os_helper.TESTFN)
+        else:
+            fifo_path = os_helper.TESTFN
         try:
-            posix.mkfifo(os_helper.TESTFN, stat.S_IRUSR | stat.S_IWUSR)
+            posix.mkfifo(fifo_path, stat.S_IRUSR | stat.S_IWUSR)
         except PermissionError as e:
             self.skipTest('posix.mkfifo(): %s' % e)
-        self.assertTrue(stat.S_ISFIFO(posix.stat(os_helper.TESTFN).st_mode))
+        self.assertTrue(stat.S_ISFIFO(posix.stat(fifo_path).st_mode))
 
     @unittest.skipUnless(hasattr(posix, 'mknod') and hasattr(stat, 'S_IFIFO'),
                          "don't have mknod()/S_IFIFO")
@@ -1039,7 +1049,7 @@ class PosixTester(unittest.TestCase):
         self.assertIn(group, posix.getgrouplist(user, group))
 
 
-    @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
+    @unittest.skipUnless(_supports_shell() and hasattr(os, 'getegid'), "test needs shell support and os.getegid()")
     def test_getgroups(self):
         with os.popen('id -G 2>/dev/null') as idg:
             groups = idg.read().strip()
@@ -1089,7 +1099,7 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.close(f)
 
-    @unittest.skipUnless(os.chown in os.supports_dir_fd, "test needs dir_fd support in os.chown()")
+    @unittest.skipUnless(hasattr(os, 'chown') and (os.chown in os.supports_dir_fd), "test needs dir_fd support in os.chown()")
     def test_chown_dir_fd(self):
         os_helper.unlink(os_helper.TESTFN)
         os_helper.create_empty_file(os_helper.TESTFN)
@@ -1184,7 +1194,7 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
             os_helper.rmtree(os_helper.TESTFN + 'dir')
 
-    @unittest.skipUnless((os.mknod in os.supports_dir_fd) and hasattr(stat, 'S_IFIFO'),
+    @unittest.skipUnless(hasattr(os, 'mknod') and (os.mknod in os.supports_dir_fd) and hasattr(stat, 'S_IFIFO'),
                          "test requires both stat.S_IFIFO and dir_fd support for os.mknod()")
     def test_mknod_dir_fd(self):
         # Test using mknodat() to create a FIFO (the only use specified
@@ -1217,7 +1227,7 @@ class PosixTester(unittest.TestCase):
             posix.close(a)
             posix.close(b)
 
-    @unittest.skipUnless(os.readlink in os.supports_dir_fd, "test needs dir_fd support in os.readlink()")
+    @unittest.skipUnless(hasattr(os, 'readlink') and (os.readlink in os.supports_dir_fd), "test needs dir_fd support in os.readlink()")
     def test_readlink_dir_fd(self):
         os.symlink(os_helper.TESTFN, os_helper.TESTFN + 'link')
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
