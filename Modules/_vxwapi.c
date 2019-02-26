@@ -76,11 +76,35 @@ static void _close_open_fds(long start_fd, PyObject* py_fds_to_keep)
         if (ret < 0)
             continue;
 
-        if (!_is_fd_in_sorted_fd_sequence(fd, py_fds_to_keep))
+        if (_is_fd_in_sorted_fd_sequence(fd, py_fds_to_keep))
             continue;
 
         _Py_set_inheritable_async_safe(fd, 0, NULL);
     }
+}
+
+
+static int
+make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
+{
+    Py_ssize_t i, len;
+
+    len = PyTuple_GET_SIZE(py_fds_to_keep);
+    for (i = 0; i < len; ++i) {
+        PyObject* fdobj = PyTuple_GET_ITEM(py_fds_to_keep, i);
+        long fd = PyLong_AsLong(fdobj);
+        assert(!PyErr_Occurred());
+        assert(0 <= fd && fd <= INT_MAX);
+        if (fd == errpipe_write) {
+            /* errpipe_write is part of py_fds_to_keep. It must be closed at
+               exec(), but kept open in the child process until exec() is
+               called. */
+            continue;
+        }
+        if (_Py_set_inheritable_async_safe((int)fd, 1, NULL) < 0)
+            return -1;
+    }
+    return 0;
 }
 
 static PyObject *
@@ -104,6 +128,39 @@ rtp_spawn_impl(
     const char *cwd = NULL;
     PyObject *cwd_obj2;
     char *const *exec_array;
+
+    int p2cread_bk  = -1;
+    int c2pwrite_bk = -1;
+    int errwrite_bk = -1;
+
+    if (make_inheritable(py_fds_to_keep, errpipe_write) < 0)
+        goto error;
+
+    /* When duping fds, if there arises a situation where one of the fds is
+       either 0, 1 or 2, it is possible that it is overwritten (#12607). */
+    if (c2pwrite == 0) {
+        c2pwrite = dup(c2pwrite);
+        if (_Py_set_inheritable_async_safe(c2pwrite, 0, NULL) < 0) {
+            goto error;
+        }
+        c2pwrite_bk = c2pwrite;
+    }
+
+    if (c2pwrite_bk == -1 && p2cread == 1) {
+        p2cread = dup(p2cread);
+        if (_Py_set_inheritable_async_safe(p2cread, 0, NULL) < 0) {
+            goto error;
+        }
+        p2cread_bk = p2cread;
+    }
+
+    while (errwrite == 0 || errwrite == 1) {
+        errwrite = dup(errwrite);
+        if (_Py_set_inheritable_async_safe(errwrite, 0, NULL) < 0) {
+            goto error;
+        }
+        errwrite_bk = errwrite;
+    }
 
     exec_array = _PySequence_BytesToCharpArray(executable_list);
     if (!exec_array)
@@ -177,6 +234,9 @@ rtp_spawn_impl(
     char *cwd_bk = getcwd(pwdbuf, sizeof(pwdbuf));
     if (cwd) {
         if (chdir(cwd) == -1) {
+            if (ENODEV == errno) {
+                errno = ENOENT;
+            }
             goto error;
         }
     }
@@ -198,12 +258,21 @@ rtp_spawn_impl(
              (const char**)envpp, priority, uStackSize, options, taskOptions);
 
         if (RTP_ID_ERROR == pid && saved_errno == 0) {
-            if (errno == ENOENT) {
-                errno = ENODEV;
+            if (ENODEV == errno) {
+                errno = ENOENT;
             }
             saved_errno = errno;
         }
     }
+
+    if (p2cread_bk != -1 )
+        close(p2cread_bk);
+
+    if (c2pwrite_bk != -1 )
+        close(c2pwrite_bk);
+
+    if (errwrite_bk != -1 )
+        close(errwrite_bk);
 
     if (exec_array)
         _Py_FreeCharPArray(exec_array);
@@ -267,6 +336,40 @@ error:
 }
 
 
+static void _save_fds(int saved_fd[])
+{
+    int fd;
+    int flags;
+
+    if (!saved_fd) return;
+
+    for (fd = 0; fd < FD_SETSIZE; ++fd) {
+        flags = fcntl (fd, F_GETFD);
+        if (flags < 0)
+            continue;
+
+        saved_fd[fd] = !(flags & FD_CLOEXEC);
+    }
+}
+
+static void _restore_fds(int saved_fd[])
+{
+    int fd;
+    int flags;
+
+    if (!saved_fd) return;
+
+    for (fd = 0; fd < FD_SETSIZE; ++fd) {
+        flags = fcntl (fd, F_GETFD);
+        if (flags < 0)
+            continue;
+
+        if (-1 != saved_fd[fd]) {
+            _Py_set_inheritable_async_safe(fd, saved_fd[fd], NULL);
+        }
+    }
+}
+
 /*[clinic input]
 _vxwapi.rtp_spawn
 
@@ -306,6 +409,7 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     char *const *argv = NULL, *const *envp = NULL;
+    int saved_fd[FD_SETSIZE] = {-1};
 
     PyObject *return_value = NULL;
     if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
@@ -374,11 +478,15 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
             goto cleanup;
     }
 
+    _save_fds(saved_fd);
+
     return_value = rtp_spawn_impl(
                         executable_list, argv, envp, cwd_obj,
                         p2cread, p2cwrite, c2pread, c2pwrite,
                         errread, errwrite, errpipe_read, errpipe_write,
                         close_fds, restore_signals, py_fds_to_keep);
+
+    _restore_fds (saved_fd);
 
 cleanup:
     if (envp)
