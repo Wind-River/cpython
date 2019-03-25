@@ -959,7 +959,10 @@ class PyBuildExt(build_ext):
         self.add(Extension('_csv', ['_csv.c']))
 
         # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c'],
+        if VXWORKS:
+            self.add(Extension('_vxwapi', ['_vxwapi.c']))
+        else:
+            self.add(Extension('_posixsubprocess', ['_posixsubprocess.c'],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
     def detect_test_extensions(self):
