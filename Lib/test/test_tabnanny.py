@@ -5,6 +5,7 @@ Glossary:
 """
 from unittest import TestCase, mock
 from unittest import mock
+import sys
 import errno
 import os
 import tabnanny
