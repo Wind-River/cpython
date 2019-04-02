@@ -180,9 +180,8 @@ class WakeupFDTests(unittest.TestCase):
 
         signal.set_wakeup_fd(w1)
         self.assertEqual(signal.set_wakeup_fd(w2), w1)
-        if sys.platform != "vxworks":
-            self.assertEqual(signal.set_wakeup_fd(-1), w2)
-            self.assertEqual(signal.set_wakeup_fd(-1), -1)
+        self.assertEqual(signal.set_wakeup_fd(-1), w2)
+        self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
     def test_set_wakeup_fd_socket_result(self):
         sock1 = socket.socket()
@@ -197,9 +196,8 @@ class WakeupFDTests(unittest.TestCase):
 
         signal.set_wakeup_fd(fd1)
         self.assertEqual(signal.set_wakeup_fd(fd2), fd1)
-        if sys.platform != "vxworks":
-            self.assertEqual(signal.set_wakeup_fd(-1), fd2)
-            self.assertEqual(signal.set_wakeup_fd(-1), -1)
+        self.assertEqual(signal.set_wakeup_fd(-1), fd2)
+        self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
     # On Windows, files are always blocking and Windows does not provide a
     # function to test if a socket is in non-blocking mode.
