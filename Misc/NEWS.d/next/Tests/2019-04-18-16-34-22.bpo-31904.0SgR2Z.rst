@@ -1,0 +1,2 @@
+test/support/__init__.py: add ``skip_if_restricted_mkfifo()`` for VxWorks.
+Patched by Wenle Chai

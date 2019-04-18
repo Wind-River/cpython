@@ -40,9 +40,10 @@ __all__ = [
     "requires_IEEE_754", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
+    "skip_if_restricted_mkfifo",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
-    "setswitchinterval",
+    "setswitchinterval", "is_vxworks",
     # network
     "open_urlresource",
     # processes
@@ -420,6 +421,8 @@ requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
+
+is_vxworks = (sys.platform == "vxworks")
 
 if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -1407,6 +1410,19 @@ def detect_api_mismatch(ref_api, other_api, *, ignore=()):
     missing_items = set(m for m in missing_items
                         if not m.startswith('_') or m.endswith('__'))
     return missing_items
+
+
+def skip_if_restricted_mkfifo(test):
+    """Skip decorator for tests that require POSIX-defined mkfifo"""
+    msg = "Requires POSIX-defined mkfifo implementation"
+    """VxWorks mkfifo() has a restriction: the path argument specified
+    with the mkfifo() call must point to the path on the pipe device '/fifos'
+    """
+    if is_vxworks:
+        restricted = True
+    else:
+        restricted = False
+    return unittest.skip(msg)(test) if restricted else test
 
 
 def check__all__(test_case, module, name_of_module=None, extra=(),
