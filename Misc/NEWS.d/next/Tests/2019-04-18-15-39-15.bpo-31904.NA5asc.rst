@@ -1,0 +1,3 @@
+test_pathlib.PathTest: skip ``test_is_fifo_true()`` for VxWorks.
+test_pathlib.PosixPathTest: skip ``test_expanduser()`` for VxWorks.
+Patched by Wenle Chai

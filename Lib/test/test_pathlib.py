@@ -2186,6 +2186,7 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_fifo(), False)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
+    @support.skip_if_restricted_mkfifo
     def test_is_fifo_true(self):
         P = self.cls(BASE, 'myfifo')
         try:
@@ -2432,6 +2433,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 
     @unittest.skipUnless(hasattr(pwd, 'getpwall'),
                          'pwd module does not expose getpwall()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "pwd module does not support getpwuid().pw_dir on VxWorks")
     def test_expanduser(self):
         P = self.cls
         import_helper.import_module('pwd')
