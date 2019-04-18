@@ -1239,6 +1239,8 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             # No point in testing the name params - the file has no name.
             tempfile.TemporaryFile()
 
+        @unittest.skipUnless(hasattr(os, 'O_TMPFILE'),
+                "os.O_TMPFILE is required for this test")
         def test_has_no_name(self):
             # TemporaryFile creates files with no names (on this system)
             dir = tempfile.mkdtemp()

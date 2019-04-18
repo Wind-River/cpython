@@ -1,0 +1,2 @@
+test_tempfile.TestTemporaryFile: skip ``test_has_no_name()`` for VxWorks.
+Patched by Wenle Chai
