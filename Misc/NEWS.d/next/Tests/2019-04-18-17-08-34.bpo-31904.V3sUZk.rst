@@ -1,0 +1,2 @@
+test_shutil.TestShutil: skip ``test_copyfile_named_pipe()`` and 
+``test_copytree_named_pipe()`` for VxWorks. Patched by Wenle Chai
