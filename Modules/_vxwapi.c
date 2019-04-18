@@ -252,6 +252,10 @@ rtp_spawn_impl(
     (void)taskStackSizeGet (taskIdSelf(), &uStackSize);
 
     saved_errno = 0;
+
+    if (!envpp)
+        envpp = (const char**)environ;
+
     for (int i = 0; exec_array[i] != NULL; ++i) {
         const char *executable = exec_array[i];
         pid = rtpSpawn (executable, (const char **)argvp,
