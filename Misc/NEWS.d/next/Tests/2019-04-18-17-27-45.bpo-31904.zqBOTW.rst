@@ -1,0 +1,2 @@
+test_posixpath.PosixPathTest: skip ``test_expanduser_pwd()`` for VxWorks.
+Patched by Wenle Chai
