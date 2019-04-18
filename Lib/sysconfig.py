@@ -201,6 +201,9 @@ def _getuserbase():
         return joinuser("~", "Library", sys._framework,
                         "%d.%d" % sys.version_info[:2])
 
+    if sys.platform == "vxworks":
+        return sys.prefix
+
     return joinuser("~", ".local")
 
 

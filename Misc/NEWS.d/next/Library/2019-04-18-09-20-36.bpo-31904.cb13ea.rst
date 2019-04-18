@@ -1,0 +1,2 @@
+Update site package base: use {sys.prefix}/lib/python3.x/site-packages for 
+site-packages directory as VxWorks doesn't support '~'

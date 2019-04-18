@@ -178,8 +178,9 @@ Module contents
    :func:`getusersitepackages` hasn't been called yet.  Default value is
    :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework Mac
    OS X builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for Mac
-   framework builds, and :file:`{%APPDATA%}\\Python\\Python{XY}\\site-packages`
-   on Windows.  This directory is a site directory, which means that
+   framework builds, :file:`{sys.prefix}/lib/python{X.Y}/site-packages` for
+   VxWorks, and :file:`{%APPDATA%}\\Python\\Python{XY}\\site-packages` on
+   Windows. This directory is a site directory, which means that
    :file:`.pth` files in it will be processed.
 
 
@@ -188,7 +189,8 @@ Module contents
    Path to the base directory for the user site-packages.  Can be ``None`` if
    :func:`getuserbase` hasn't been called yet.  Default value is
    :file:`~/.local` for UNIX and Mac OS X non-framework builds,
-   :file:`~/Library/Python/{X.Y}` for Mac framework builds, and
+   :file:`~/Library/Python/{X.Y}` for Mac framework builds,
+   :file:`{sys.prefix}` for VxWorks builds, and
    :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Distutils to
    compute the installation directories for scripts, data files, Python modules,
    etc. for the :ref:`user installation scheme <inst-alt-install-user>`.

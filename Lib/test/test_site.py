@@ -309,8 +309,10 @@ class HelperFunctionsTests(unittest.TestCase):
             del environ['APPDATA']
 
             user_base = site.getuserbase()
-            self.assertTrue(user_base.startswith('~' + os.sep),
-                            user_base)
+
+            if sys.platform != "vxworks":
+                self.assertTrue(user_base.startswith('~' + os.sep),
+                                user_base)
 
             user_site = site.getusersitepackages()
             self.assertTrue(user_site.startswith(user_base), user_site)
