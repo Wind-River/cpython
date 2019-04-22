@@ -1,0 +1,2 @@
+test_support.TestSupport: add ``os.fork()`` check for ``test_reap_children()``.
+Patched by Wenle Chai

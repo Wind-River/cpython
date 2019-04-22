@@ -413,6 +413,7 @@ class TestSupport(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
                          'need os.waitpid() and os.WNOHANG')
+    @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
     def test_reap_children(self):
         # Make sure that there is no other pending child process
         support.reap_children()
