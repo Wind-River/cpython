@@ -258,9 +258,14 @@ rtp_spawn_impl(
 
     for (int i = 0; exec_array[i] != NULL; ++i) {
         const char *executable = exec_array[i];
+        const char * arg0_bk;
+        arg0_bk = ((const char **)argvp)[0];
+        ((const char **)argvp)[0] = executable;
+
         pid = rtpSpawn (executable, (const char **)argvp,
              (const char**)envpp, priority, uStackSize, options, taskOptions);
 
+        ((const char **)argvp)[0] = arg0_bk;
         if (RTP_ID_ERROR == pid && saved_errno == 0) {
             if (ENODEV == errno) {
                 errno = ENOENT;
