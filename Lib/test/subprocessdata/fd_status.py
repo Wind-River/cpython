@@ -28,7 +28,11 @@ if __name__ == "__main__":
             if e.errno == errno.EBADF:
                 continue
             raise
-        # Ignore Solaris door files
-        if not stat.S_ISDOOR(st.st_mode):
-            fds.append(fd)
+        if sys.platform == 'vxworks':
+            if not stat.S_ISSOCK(st.st_mode):
+               fds.append(fd)
+        else:
+            # Ignore Solaris door files
+            if not stat.S_ISDOOR(st.st_mode):
+               fds.append(fd)
     print(','.join(map(str, fds)))

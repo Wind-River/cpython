@@ -256,16 +256,34 @@ rtp_spawn_impl(
     if (!envpp)
         envpp = (const char**)environ;
 
-    for (int i = 0; exec_array[i] != NULL; ++i) {
-        const char *executable = exec_array[i];
-        const char * arg0_bk;
-        arg0_bk = ((const char **)argvp)[0];
-        ((const char **)argvp)[0] = executable;
+    int i = 0;
+    const char ** vx_argvp;
 
-        pid = rtpSpawn (executable, (const char **)argvp,
+    if (!argvp || !argvp[0]) {
+        if ((vx_argvp = calloc(2, sizeof(char *))) == NULL)
+            goto error;
+        vx_argvp[1] = NULL;
+    }
+    else {
+        int argc = 0;
+        i = 0;
+        while(argvp[i++]) {
+            argc++;
+        }
+        if ((vx_argvp = calloc(argc + 1, sizeof(char *))) == NULL)
+            goto error;
+        for (i = 0; i < argc; i++)
+            vx_argvp[i] = argvp[i];
+        vx_argvp[argc] = NULL;
+    }
+
+    for (i = 0; exec_array[i] != NULL; ++i) {
+        const char *executable = exec_array[i];
+        vx_argvp[0] = executable;
+
+        pid = rtpSpawn (executable, vx_argvp,
              (const char**)envpp, priority, uStackSize, options, taskOptions);
 
-        ((const char **)argvp)[0] = arg0_bk;
         if (RTP_ID_ERROR == pid && saved_errno == 0) {
             if (ENODEV == errno) {
                 errno = ENOENT;
@@ -273,6 +291,8 @@ rtp_spawn_impl(
             saved_errno = errno;
         }
     }
+
+    free((void *)vx_argvp);
 
     if (p2cread_bk != -1 )
         close(p2cread_bk);

@@ -345,6 +345,7 @@ class ProcessTestCase(BaseTestCase):
                           executable=NONEXISTING_CMD[0])
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(sys.platform == 'vxworks', 'shell is not supported on VxWorks')
     def test_executable_replaces_shell(self):
         # Check that the executable argument replaces the default shell
         # when shell=True.
@@ -1126,7 +1127,7 @@ class ProcessTestCase(BaseTestCase):
                     tmpfile = os.path.join(tmpdir, os_helper.TESTFN)
                     handles.append(os.open(tmpfile, os.O_WRONLY|os.O_CREAT))
                 except OSError as e:
-                    if e.errno != errno.EMFILE:
+                    if (e.errno != errno.EMFILE) and (e.errno != errno.ENFILE):
                         raise
                     break
             else:
@@ -1772,6 +1773,8 @@ class POSIXProcessTestCase(BaseTestCase):
         def __del__(self):
             pass
 
+    @unittest.skipUnless(hasattr(subprocess, '_posixsubprocess'),
+                         "No _posixsubprocess in subprocess.")
     @mock.patch("subprocess._posixsubprocess.fork_exec")
     def test_exception_errpipe_normal(self, fork_exec):
         """Test error passing done through errpipe_write in the good case"""
@@ -1789,6 +1792,27 @@ class POSIXProcessTestCase(BaseTestCase):
             with self.assertRaises(IsADirectoryError):
                 self.PopenNoDestructor(["non_existent_command"])
 
+    @unittest.skipUnless(hasattr(subprocess, '_vxwapi'),
+                         "No _vxwapi in subprocess.")
+    @mock.patch("subprocess._vxwapi.rtp_spawn")
+    def test_exception_errpipe_normal(self, rtp_spawn):
+        """Test error passing done through errpipe_write in the good case"""
+        def proper_error(*args):
+            errpipe_write = args[13]
+            # Write the hex for the error code EISDIR: 'is a directory'
+            err_code = '{:x}'.format(errno.EISDIR).encode()
+            os.write(errpipe_write, b"OSError:" + err_code + b":")
+            return 0
+
+        rtp_spawn.side_effect = proper_error
+
+        with mock.patch("subprocess.os.waitpid",
+                        side_effect=ChildProcessError):
+            with self.assertRaises(IsADirectoryError):
+                self.PopenNoDestructor(["non_existent_command"])
+
+    @unittest.skipUnless(hasattr(subprocess, '_posixsubprocess'),
+                         "No _posixsubprocess in subprocess.")
     @mock.patch("subprocess._posixsubprocess.fork_exec")
     def test_exception_errpipe_bad_data(self, fork_exec):
         """Test error passing done through errpipe_write where its not
@@ -1803,6 +1827,30 @@ class POSIXProcessTestCase(BaseTestCase):
             return 0
 
         fork_exec.side_effect = bad_error
+
+        with mock.patch("subprocess.os.waitpid",
+                        side_effect=ChildProcessError):
+            with self.assertRaises(subprocess.SubprocessError) as e:
+                self.PopenNoDestructor(["non_existent_command"])
+
+        self.assertIn(repr(error_data), str(e.exception))
+
+    @unittest.skipUnless(hasattr(subprocess, '_vxwapi'),
+                         "No _vxwapi in subprocess.")
+    @mock.patch("subprocess._vxwapi.rtp_spawn")
+    def test_exception_errpipe_bad_data(self, rtp_spawn):
+        """Test error passing done through errpipe_write where its not
+        in the expected format"""
+        error_data = b"\xFF\x00\xDE\xAD"
+        def bad_error(*args):
+            errpipe_write = args[13]
+            # Anything can be in the pipe, no assumptions should
+            # be made about its encoding, so we'll write some
+            # arbitrary hex bytes to test it out
+            os.write(errpipe_write, error_data)
+            return 0
+
+        rtp_spawn.side_effect = bad_error
 
         with mock.patch("subprocess.os.waitpid",
                         side_effect=ChildProcessError):
@@ -1835,6 +1883,7 @@ class POSIXProcessTestCase(BaseTestCase):
                             msg="restore_signals=True should've unblocked "
                             "SIGPIPE and friends.")
 
+    @unittest.skipIf(sys.platform == 'vxworks', 'VxWorks dose not support sessions')
     def test_start_new_session(self):
         # For code coverage of calling setsid().  We don't care if we get an
         # EPERM error from it depending on the test execution environment, that
@@ -2060,6 +2109,8 @@ class POSIXProcessTestCase(BaseTestCase):
         error_string = str(err)
         self.assertIn("non-zero exit status 2.", error_string)
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                     'Preexecution function is not supported on VxWorks')
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
         # of a preexec_fn.  This is merely a test.
@@ -2071,6 +2122,8 @@ class POSIXProcessTestCase(BaseTestCase):
         with p:
             self.assertEqual(p.stdout.read(), b"apple")
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                     'Preexecution function is not supported on VxWorks')
     def test_preexec_exception(self):
         def raise_it():
             raise ValueError("What if two swallows carried a coconut?")
@@ -2126,6 +2179,8 @@ class POSIXProcessTestCase(BaseTestCase):
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE, preexec_fn=raise_it)
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                     'Preexecution function is not supported on VxWorks')
     def test_preexec_gc_module_failure(self):
         # This tests the code that disables garbage collection if the child
         # process will execute any Python.
@@ -2164,7 +2219,8 @@ class POSIXProcessTestCase(BaseTestCase):
                 gc.disable()
 
     @unittest.skipIf(
-        sys.platform == 'darwin', 'setrlimit() seems to fail on OS X')
+        sys.platform == 'darwin' or sys.platform == 'vxworks',
+        'setrlimit() seems to fail on OS X and VxWorks')
     def test_preexec_fork_failure(self):
         # The internal code did not preserve the previous exception when
         # re-enabling garbage collection
@@ -2185,6 +2241,7 @@ class POSIXProcessTestCase(BaseTestCase):
         else:
             self.skipTest('RLIMIT_NPROC had no effect; probably superuser')
 
+    @unittest.skipIf(sys.platform == 'vxworks', 'shell is not supported on VxWorks')
     def test_args_string(self):
         # args is a string
         fd, fname = tempfile.mkstemp()
@@ -2210,6 +2267,7 @@ class POSIXProcessTestCase(BaseTestCase):
                            "import sys; sys.exit(47)"],
                           creationflags=47)
 
+    @unittest.skipIf(sys.platform == 'vxworks', 'shell is not supported on VxWorks')
     def test_shell_sequence(self):
         # Run command through the shell (sequence)
         newenv = os.environ.copy()
@@ -2220,6 +2278,7 @@ class POSIXProcessTestCase(BaseTestCase):
         with p:
             self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
 
+    @unittest.skipIf(sys.platform == 'vxworks', 'shell is not supported on VxWorks')
     def test_shell_string(self):
         # Run command through the shell (string)
         newenv = os.environ.copy()
@@ -2230,6 +2289,7 @@ class POSIXProcessTestCase(BaseTestCase):
         with p:
             self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
 
+    @unittest.skipIf(sys.platform == 'vxworks', 'shell is not supported on VxWorks')
     def test_call_string(self):
         # call() function with string argument on UNIX
         fd, fname = tempfile.mkstemp()
@@ -2573,6 +2633,8 @@ class POSIXProcessTestCase(BaseTestCase):
             for to_fds in itertools.permutations(range(3), 2):
                 self._check_swap_std_fds_with_one_closed(from_fds, to_fds)
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                     'Preexecution function is not supported on VxWorks')
     def test_surrogates_error_message(self):
         def prepare():
             raise ValueError("surrogate:\uDCff")
@@ -2631,10 +2693,11 @@ class POSIXProcessTestCase(BaseTestCase):
         exitcode = subprocess.call([abs_program]+args)
         self.assertEqual(exitcode, 0)
 
-        # absolute bytes path as a string
-        cmd = b"'%s' %s" % (abs_program, " ".join(args).encode("utf-8"))
-        exitcode = subprocess.call(cmd, shell=True)
-        self.assertEqual(exitcode, 0)
+        if sys.platform != "vxworks":
+            # absolute bytes path as a string
+            cmd = b"'%s' %s" % (abs_program, " ".join(args).encode("utf-8"))
+            exitcode = subprocess.call(cmd, shell=True)
+            self.assertEqual(exitcode, 0)
 
         # bytes program, unicode PATH
         env = os.environ.copy()
@@ -2763,6 +2826,8 @@ class POSIXProcessTestCase(BaseTestCase):
     @unittest.skipIf(sys.platform.startswith("freebsd") and
                      os.stat("/dev").st_dev == os.stat("/dev/fd").st_dev,
                      "Requires fdescfs mounted on /dev/fd on FreeBSD.")
+    @unittest.skipIf(sys.platform == 'vxworks',
+                     'can not set max fd lower than opened fd on VxWorks')
     def test_close_fds_when_max_fd_is_lowered(self):
         """Confirm that issue21618 is fixed (may fail under valgrind)."""
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
@@ -3045,6 +3110,8 @@ class POSIXProcessTestCase(BaseTestCase):
         else:
             self.assertNotIn(ident, [id(o) for o in subprocess._active])
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                     'Preexecution function is not supported on VxWorks')
     def test_close_fds_after_preexec(self):
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
 
@@ -3062,6 +3129,8 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.assertNotIn(fd, remaining_fds)
 
+    @unittest.skipUnless(hasattr(subprocess, '_posixsubprocess'),
+                         "No _posixsubprocess in subprocess.")
     @support.cpython_only
     def test_fork_exec(self):
         # Issue #22290: fork_exec() must not crash on memory allocation failure
@@ -3102,6 +3171,8 @@ class POSIXProcessTestCase(BaseTestCase):
             if not gc_enabled:
                 gc.disable()
 
+    @unittest.skipUnless(hasattr(subprocess, '_posixsubprocess'),
+                         "No _posixsubprocess in subprocess.")
     @support.cpython_only
     def test_fork_exec_sorted_fd_sanity_check(self):
         # Issue #23564: sanity check the fork_exec() fds_to_keep sanity check.
@@ -3139,6 +3210,47 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, True,
                         None, None, None, -1,
                         None)
+                self.assertIn('fds_to_keep', str(c.exception))
+        finally:
+            if not gc_enabled:
+                gc.disable()
+
+    @unittest.skipUnless(hasattr(subprocess, '_vxwapi'), "No _vxwapi in subprocess.")
+    @support.cpython_only
+    def test_rtp_spawn_sorted_fd_sanity_check(self):
+        # Issue #23564: sanity check the fork_exec() fds_to_keep sanity check.
+        import _vxwapi
+        class BadInt:
+            first = True
+            def __init__(self, value):
+                self.value = value
+            def __int__(self):
+                if self.first:
+                    self.first = False
+                    return self.value
+                raise ValueError
+
+        gc_enabled = gc.isenabled()
+        try:
+            gc.enable()
+
+            for fds_to_keep in (
+                (-1, 2, 3, 4, 5),  # Negative number.
+                ('str', 4),  # Not an int.
+                (18, 23, 42, 2**63),  # Out of range.
+                (5, 4),  # Not sorted.
+                (6, 7, 7, 8),  # Duplicate.
+                (BadInt(1), BadInt(2)),
+            ):
+                with self.assertRaises(
+                        ValueError,
+                        msg='fds_to_keep={}'.format(fds_to_keep)) as c:
+                    _vxwapi.rtp_spawn(
+                        [b"false"], [b"false"],
+                        True, fds_to_keep, None, [b"env"],
+                        -1, -1, -1, -1,
+                        1, 2, 3, 4,
+                        True, True, None)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
@@ -3561,6 +3673,7 @@ class MiscTests(unittest.TestCase):
                 raise KeyboardInterrupt  # Test how __exit__ handles ^C.
         self._test_keyboardinterrupt_no_kill(popen_via_context_manager)
 
+    @unittest.skipIf(sys.platform == 'vxworks','shell is not supported on VxWorks')
     def test_getoutput(self):
         self.assertEqual(subprocess.getoutput('echo xyzzy'), 'xyzzy')
         self.assertEqual(subprocess.getstatusoutput('echo xyzzy'),
