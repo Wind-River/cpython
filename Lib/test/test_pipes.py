@@ -1,5 +1,6 @@
 import pipes
 import os
+import sys
 import string
 import unittest
 import shutil
@@ -54,6 +55,8 @@ class SimplePipeTests(unittest.TestCase):
         finally:
             f.close()
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                     'VxWorks can not support shell, so it can not support copy')
     def testEmptyPipeline1(self):
         # copy through empty pipe
         d = 'empty pipeline test COPY'
