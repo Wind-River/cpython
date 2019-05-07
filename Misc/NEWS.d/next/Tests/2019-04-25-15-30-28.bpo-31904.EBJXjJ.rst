@@ -1,0 +1,2 @@
+test_doctest.test_doctest.test_CLI: Modify error message of 'Invalid file name' 
+test case for VxWorks. Patched by Wenle Chai
