@@ -2380,13 +2380,17 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_kill(self):
         p = self._kill_process('kill')
         _, stderr = p.communicate()
-        self.assertEqual(stderr, b'')
+        # VxWorks maybe returned OSError 'EDOOM', it is not bug
+        if sys.platform != 'vxworks':
+            self.assertEqual(stderr, b'')
         self.assertEqual(p.wait(), -signal.SIGKILL)
 
     def test_terminate(self):
         p = self._kill_process('terminate')
         _, stderr = p.communicate()
-        self.assertEqual(stderr, b'')
+        # VxWorks maybe returned OSError 'EDOOM', it is not bug
+        if sys.platform != 'vxworks':
+            self.assertEqual(stderr, b'')
         self.assertEqual(p.wait(), -signal.SIGTERM)
 
     def test_send_signal_dead(self):
