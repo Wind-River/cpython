@@ -1,0 +1,2 @@
+test.test_posixpath.PosixPathTest: skip ``test_realpath_resolve_parents()``
+for VxWorks. Patched by Wenle Chai

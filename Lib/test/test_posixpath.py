@@ -445,6 +445,7 @@ class PosixPathTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, "symlink"),
                          "Missing symlink implementation")
     @skip_if_ABSTFN_contains_backslash
+    @unittest.skipIf(support.is_vxworks, "Need POSIX-defined getcwd()")
     def test_realpath_resolve_parents(self):
         # We also need to resolve any symlinks in the parents of a relative
         # path passed to realpath. E.g.: current working directory is
