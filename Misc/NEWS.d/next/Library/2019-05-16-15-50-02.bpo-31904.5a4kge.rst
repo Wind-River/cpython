@@ -1,0 +1,2 @@
+Port test_locale to VxWorks: skip test cases as setlocale() doesn't raise
+error for the failed modification of the locale on VxWorks
