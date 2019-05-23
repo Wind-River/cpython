@@ -445,14 +445,23 @@ def _flush_std_streams():
 #
 
 def spawnv_passfds(path, args, passfds):
-    import _posixsubprocess
+    if sys.platform == 'vxworks':
+        import _vxwapi
+    else:
+        import _posixsubprocess
     passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()
     try:
-        return _posixsubprocess.fork_exec(
-            args, [os.fsencode(path)], True, passfds, None, None,
-            -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
-            False, False, None, None, None, -1, None)
+        if sys.platform == 'vxworks':
+            return _vxwapi.rtp_spawn(
+                args, [os.fsencode(path)], True, passfds, None, None,
+                -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
+                False, False, None)
+        else:
+            return _posixsubprocess.fork_exec(
+                args, [os.fsencode(path)], True, passfds, None, None,
+                -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
+                False, False, None, None, None, -1, None)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)

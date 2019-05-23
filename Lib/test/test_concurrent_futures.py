@@ -163,6 +163,8 @@ class ProcessPoolForkMixin(ExecutorMixin):
     def get_context(self):
         if sys.platform == "win32":
             self.skipTest("require unix system")
+        if sys.platform == "vxworks":
+            self.skipTest("fork is not supported on VxWorks")
         return super().get_context()
 
 
@@ -178,6 +180,8 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
     def get_context(self):
         if sys.platform == "win32":
             self.skipTest("require unix system")
+        if sys.platform == "vxworks":
+            self.skipTest("forkserver is not supported on VxWorks")
         return super().get_context()
 
 
@@ -566,7 +570,10 @@ class WaitTests:
 
     def test_first_completed(self):
         future1 = self.executor.submit(mul, 21, 2)
-        future2 = self.executor.submit(time.sleep, 1.5)
+        if sys.platform == "vxworks":
+            future2 = self.executor.submit(time.sleep, 10)
+        else:
+            future2 = self.executor.submit(time.sleep, 1.5)
 
         done, not_done = futures.wait(
                 [CANCELLED_FUTURE, future1, future2],
@@ -590,7 +597,10 @@ class WaitTests:
     def test_first_exception(self):
         future1 = self.executor.submit(mul, 2, 21)
         future2 = self.executor.submit(sleep_and_raise, 1.5)
-        future3 = self.executor.submit(time.sleep, 3)
+        if sys.platform == "vxworks":
+            future3 = self.executor.submit(time.sleep, 10)
+        else:
+            future3 = self.executor.submit(time.sleep, 3)
 
         finished, pending = futures.wait(
                 [future1, future2, future3],
@@ -646,9 +656,18 @@ class WaitTests:
 
     def test_timeout(self):
         future1 = self.executor.submit(mul, 6, 7)
-        future2 = self.executor.submit(time.sleep, 6)
-
-        finished, pending = futures.wait(
+        if sys.platform == "vxworks":
+            future2 = self.executor.submit(time.sleep, 15)
+            finished, pending = futures.wait(
+                [CANCELLED_AND_NOTIFIED_FUTURE,
+                 EXCEPTION_FUTURE,
+                 SUCCESSFUL_FUTURE,
+                 future1, future2],
+                timeout=10,
+                return_when=futures.ALL_COMPLETED)
+        else:
+            future2 = self.executor.submit(time.sleep, 6)
+            finished, pending = futures.wait(
                 [CANCELLED_AND_NOTIFIED_FUTURE,
                  EXCEPTION_FUTURE,
                  SUCCESSFUL_FUTURE,
