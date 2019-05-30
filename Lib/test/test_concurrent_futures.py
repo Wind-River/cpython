@@ -598,7 +598,7 @@ class WaitTests:
         future1 = self.executor.submit(mul, 2, 21)
         future2 = self.executor.submit(sleep_and_raise, 1.5)
         if sys.platform == "vxworks":
-            future3 = self.executor.submit(time.sleep, 10)
+            future3 = self.executor.submit(time.sleep, 15)
         else:
             future3 = self.executor.submit(time.sleep, 3)
 
