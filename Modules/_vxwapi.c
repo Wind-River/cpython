@@ -121,7 +121,7 @@ rtp_spawn_impl(
            PyObject *py_fds_to_keep)
 {
     int priority = 0;
-    unsigned int uStackSize = 0;
+    size_t uStackSize = 0;
     int options = 0;
     int taskOptions = VX_FP_TASK;
     char  pwdbuf[PATH_MAX]={0};
