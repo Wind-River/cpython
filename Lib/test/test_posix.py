@@ -40,9 +40,9 @@ def _supports_sched():
 
 def _supports_shell():
     if sys.platform == "vxworks":
-       return False
+        return False
     else:
-       return True
+        return True
 
 requires_sched = unittest.skipUnless(_supports_sched(), 'requires POSIX scheduler API')
 

@@ -30,9 +30,9 @@ if __name__ == "__main__":
             raise
         if sys.platform == 'vxworks':
             if not stat.S_ISSOCK(st.st_mode):
-               fds.append(fd)
+                fds.append(fd)
         else:
             # Ignore Solaris door files
             if not stat.S_ISDOOR(st.st_mode):
-               fds.append(fd)
+                fds.append(fd)
     print(','.join(map(str, fds)))
