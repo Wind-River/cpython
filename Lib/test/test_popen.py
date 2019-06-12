@@ -7,6 +7,11 @@ import unittest
 from test import support
 import os, sys
 
+try:
+    os.popen
+except AttributeError:
+    raise unittest.SkipTest("os.popen not defined")
+
 # Test that command-lines get down as we expect.
 # To do this we execute:
 #    python -c "import sys;print(sys.argv)" {rest_of_commandline}
