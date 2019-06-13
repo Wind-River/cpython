@@ -254,7 +254,7 @@ rtp_spawn_impl(
     saved_errno = 0;
 
     if (!envpp)
-        envpp = (const char**)environ;
+        envpp = (char * const *)environ;
 
     int i = 0;
     const char ** vx_argvp;
