@@ -2,6 +2,8 @@ import netrc, os, unittest, sys, tempfile, textwrap
 from test import support
 from test.support import os_helper
 
+@unittest.skipIf(sys.platform == "vxworks",
+                "netrc module is not supported on VxWorks")
 
 class NetrcTestCase(unittest.TestCase):
 
