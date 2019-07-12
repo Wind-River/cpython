@@ -150,6 +150,7 @@ class SubprocessMixin:
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
 
+    @unittest.skipUnless(sys.platform != 'vxworks', "shell is not supported on VxWorks")
     def test_shell(self):
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_shell('exit 7')
@@ -157,6 +158,7 @@ class SubprocessMixin:
         exitcode = self.loop.run_until_complete(proc.wait())
         self.assertEqual(exitcode, 7)
 
+    @unittest.skipUnless(sys.platform != 'vxworks', "shell is not supported on VxWorks")
     def test_start_new_session(self):
         # start the new process in a new session
         proc = self.loop.run_until_complete(
