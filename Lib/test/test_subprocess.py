@@ -352,11 +352,13 @@ class ProcessTestCase(BaseTestCase):
         self._assert_python([], executable=sys.executable, shell=True)
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(sys.platform == 'vxworks', 'shell is not supported on VxWorks')
     def test_bytes_executable_replaces_shell(self):
         self._assert_python([], executable=os.fsencode(sys.executable),
                             shell=True)
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(sys.platform == 'vxworks', 'shell is not supported on VxWorks')
     def test_pathlike_executable_replaces_shell(self):
         self._assert_python([], executable=FakePath(sys.executable),
                             shell=True)
@@ -1670,6 +1672,7 @@ class RunFuncTestCase(BaseTestCase):
     # but does assert that it happened "soon enough" to believe the right thing
     # happened.
     @unittest.skipIf(mswindows, "requires posix like 'sleep' shell command")
+    @unittest.skipIf(sys.platform == 'vxworks', 'shell is not supported on VxWorks')
     def test_run_with_shell_timeout_and_capture_output(self):
         """Output capturing after a timeout mustn't hang forever on open filehandles."""
         before_secs = time.monotonic()
