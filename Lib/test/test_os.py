@@ -115,7 +115,10 @@ class MiscTests(unittest.TestCase):
         # On Windows, the test can stop when trying to create a path longer
         # than MAX_PATH if long paths support is disabled:
         # see RtlAreLongPathsEnabled().
-        min_len = 2000   # characters
+        if sys.platform == 'vxworks':
+            min_len = 1000   # MAX_PATH on vxworks is defined as 1024
+        else:
+            min_len = 2000   # characters
         dirlen = 200     # characters
         dirname = 'python_test_dir_'
         dirname = dirname + ('a' * (dirlen - len(dirname)))
