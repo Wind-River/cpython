@@ -157,7 +157,9 @@ class MultiProcessingCmdLineMixin():
             print("Output from test script %r:" % script_name)
             print(repr(out))
         self.assertEqual(exit_code, 0)
-        self.assertEqual(err.decode('utf-8'), '')
+        # vxworks will get EDOOM errno when task deletion attempt in progress
+        if sys.platform != "vxworks":
+            self.assertEqual(err.decode('utf-8'), '')
         expected_results = "%s -> [1, 4, 9]" % self.start_method
         self.assertEqual(out.decode('utf-8').strip(), expected_results)
 
