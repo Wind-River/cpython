@@ -56,6 +56,16 @@ def get_platform():
         return 'osf1'
     return sys.platform
 
+def _path_mixed_to_posix(path):
+    if path.startswith("/"):
+        return path
+    else:
+        sep = "/"
+        volume = path[0].lower()
+        left = path[2:]
+        left = left.replace("\\", "/")
+        return sep + volume + left
+
 
 CROSS_COMPILING = ("_PYTHON_HOST_PLATFORM" in os.environ)
 HOST_PLATFORM = get_platform()
@@ -714,7 +724,7 @@ class PyBuildExt(build_ext):
                             in_incdirs = True
                         elif line.startswith("End of search list"):
                             in_incdirs = False
-                        elif (is_gcc or is_clang) and line.startswith("LIBRARY_PATH"):
+                        elif (is_gcc) and line.startswith("LIBRARY_PATH"):
                             for d in line.strip().split("=")[1].split(":"):
                                 d = os.path.normpath(d)
                                 if '/gcc/' not in d:
@@ -723,6 +733,25 @@ class PyBuildExt(build_ext):
                         elif (is_gcc or is_clang) and in_incdirs and '/gcc/' not in line and '/clang/' not in line:
                             add_dir_to_list(self.compiler.include_dirs,
                                             line.strip())
+        finally:
+            os.unlink(tmpfile)
+
+        ret = os.system('%s --print-search-dirs >%s' % (cc, tmpfile))
+        try:
+            if ret >> 8 == 0:
+                with open(tmpfile) as fp:
+                    for line in fp.readlines():
+                        if line.startswith("libraries"):
+                            if sys.platform == "msys":
+                                sep=";"
+                            else:
+                                sep=":"
+
+                            for d in line.strip().split("=")[1].split(sep):
+                                d = _path_mixed_to_posix(d.strip())
+                                d = os.path.normpath(d)
+                                add_dir_to_list(self.compiler.library_dirs,
+                                        d)
         finally:
             os.unlink(tmpfile)
 
@@ -1158,11 +1187,7 @@ class PyBuildExt(build_ext):
     def detect_socket(self):
         # socket(2)
         kwargs = {'depends': ['socketmodule.h']}
-        if VXWORKS:
-            if not self.compiler.find_library_file(self.lib_dirs, 'net'):
-                return
-            kwargs['libraries'] = ['net']
-        elif MACOS:
+        if MACOS:
             # Issue #35569: Expose RFC 3542 socket options.
             kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
 
