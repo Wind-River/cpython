@@ -61,6 +61,7 @@
 #   undef  THREAD_STACK_SIZE
 #   define THREAD_STACK_SIZE    0x800000
 #   endif
+#endif
 #if defined(__VXWORKS__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
 #undef  THREAD_STACK_SIZE
 #define THREAD_STACK_SIZE       0x100000
