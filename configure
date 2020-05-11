@@ -9695,7 +9695,8 @@ then
 		# to 2048 kilobytes so that the stack doesn't overflow
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
-	VxWorks*) LINKFORSHARED="-export-dynamic";;
+	VxWorks*)
+		LINKFORSHARED='-Wl,-export-dynamic';;
 	esac
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LINKFORSHARED" >&5
