@@ -4,9 +4,7 @@
 #include "Python.h"
 
 #include <sys/types.h>
-#ifdef __VXWORKS__
-#include <openssl/des.h>
-#endif
+
 /* Module crypt */
 
 /*[clinic input]
@@ -42,11 +40,7 @@ crypt_crypt_impl(PyObject *module, const char *word, const char *salt)
     memset(&data, 0, sizeof(data));
     crypt_result = crypt_r(word, salt, &data);
 #else
-#ifdef __VXWORKS__
-    crypt_result = DES_crypt(word, salt);
-#else
     crypt_result = crypt(word, salt);
-#endif
 #endif
     if (crypt_result == NULL) {
         return PyErr_SetFromErrno(PyExc_OSError);
