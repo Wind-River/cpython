@@ -1850,20 +1850,9 @@ class URandomFDTests(unittest.TestCase):
             import errno
             import os
             import resource
+
             soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
-            try:
-                resource.setrlimit(resource.RLIMIT_NOFILE, (1, hard_limit))
-            except (ValueError,OSError):
-                for i in range(1, hard_limit + 1):
-                    try:
-                        os.open(os.devnull, os.O_RDONLY)
-                    except OSError as e:
-                        if e.errno == errno.EMFILE:
-                           break
-                    else:
-                        continue
-            else:
-                pass
+            resource.setrlimit(resource.RLIMIT_NOFILE, (1, hard_limit))
             try:
                 os.urandom(16)
             except OSError as e:
