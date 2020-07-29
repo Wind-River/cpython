@@ -19,12 +19,6 @@ from test.support.script_helper import (
 # Debug build?
 Py_DEBUG = hasattr(sys, "gettotalrefcount")
 
-def _supports_preexec():
-    if sys.platform == "vxworks":
-        return False
-    else:
-        return True
-
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
 def _kill_python_and_exit_code(p):
     data = kill_python(p)
