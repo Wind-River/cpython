@@ -48,9 +48,8 @@ default_family = 'AF_INET'
 families = ['AF_INET']
 
 if hasattr(socket, 'AF_UNIX'):
-    if sys.platform != 'vxworks':
-        default_family = 'AF_UNIX'
-        families += ['AF_UNIX']
+    default_family = 'AF_UNIX'
+    families += ['AF_UNIX']
 
 if sys.platform == 'win32':
     default_family = 'AF_PIPE'
