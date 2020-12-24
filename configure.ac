@@ -5834,6 +5834,45 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
+# check whether to disable build of unoptimized pyc files
+AC_MSG_CHECKING(for --enable-pyc-build)
+AC_ARG_ENABLE(pyc-build,
+              AS_HELP_STRING([--enable-pyc-build],
+                             [enable build of unoptimized pyc files (default is yes)]))
+if test "$enable_pyc_build" = no; then
+    PYC_BUILD=no
+else
+    PYC_BUILD=yes
+fi
+AC_SUBST(PYC_BUILD)
+AC_MSG_RESULT($PYC_BUILD)
+
+# check whether to disable build of opt-1.pyc files
+AC_MSG_CHECKING(for --enable-opt1-pyc-build)
+AC_ARG_ENABLE(opt1-pyc-build,
+              AS_HELP_STRING([--enable-opt1-pyc-build],
+                             [enable build of opt-1.pyc files (default is yes)]))
+if test "$enable_opt1_pyc_build" = no; then
+    OPT1_PYC_BUILD=no
+else
+    OPT1_PYC_BUILD=yes
+fi
+AC_SUBST(OPT1_PYC_BUILD)
+AC_MSG_RESULT($OPT1_PYC_BUILD)
+
+# check whether to disable build of opt-2.pyc files
+AC_MSG_CHECKING(for --enable-opt2-pyc-build)
+AC_ARG_ENABLE(opt2-pyc-build,
+              AS_HELP_STRING([--enable-opt2-pyc-build],
+                             [enable build of opt-2.pyc files (default is yes)]))
+if test "$enable_opt2_pyc_build" = no; then
+    OPT2_PYC_BUILD=no
+else
+    OPT2_PYC_BUILD=yes
+fi
+AC_SUBST(OPT2_PYC_BUILD)
+AC_MSG_RESULT($OPT2_PYC_BUILD)
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)

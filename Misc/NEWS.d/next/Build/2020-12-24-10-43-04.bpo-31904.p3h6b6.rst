@@ -1,0 +1,2 @@
+Add --enable-pyc-build, --enable-opt1-pyc-build and
+--enable-opt2-pyc-build option for configure.
