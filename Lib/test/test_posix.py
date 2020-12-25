@@ -752,7 +752,7 @@ class PosixTester(unittest.TestCase):
             check_stat(big_value, big_value)
             chown_func(first_param, uid, gid)
             check_stat(uid, gid)
-        elif platform.system() in ('HP-UX', 'SunOS', 'VxWorks 7'):
+        elif platform.system() in ('HP-UX', 'SunOS'):
             # HP-UX and Solaris can allow a non-root user to chown() to root
             # (issue #5113)
             raise unittest.SkipTest("Skipping because of non-standard chown() "
