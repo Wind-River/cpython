@@ -554,7 +554,7 @@ Build Changes
   (Contributed by Victor Stinner in :issue:`42639`.)
 
 * Added options ``--enable-pyc-build``, ``--enable-opt1-pyc-build`` and
-  ``--enable-opt2-pyc-build`` to the ``configure`` script. 
+  ``--enable-opt2-pyc-build`` to the ``configure`` script.
   ``--enable-pyc-build`` controls whether to build unoptimized pyc files.
   ``--enable-opt1-pyc-build`` controls whether to build opt-1.pyc files.
   ``--enable-opt2-pyc-build`` controls whether to build opt-2.pyc files.
